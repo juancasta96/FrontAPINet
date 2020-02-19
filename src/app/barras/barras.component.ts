@@ -35,62 +35,83 @@ export class BarrasComponent implements OnInit {
   }
 
   showup() {
-    const width = 450;
-    const height = 450;
-    const margin = 40;
+    const margin = 100;
+    const width = 1000 - 2 * margin;
+    const height = 600 - 2 * margin;
 
-    // The radius of the pieplot is half the width or half the height (smallest one). I subtract a bit of margin.
-    const radius = Math.min(width, height) / 2 - margin;
+    const svg = d3.select('svg');
+    const chart = svg.append('g')
+    .attr('transform', `translate(${margin}, ${margin})`);
 
-    // append the svg object to the div called 'my_dataviz'
-    const svg = d3.select('#my_dataviz')
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height)
-      .append('g')
-      .attr('transform', 'translate(" + width / 2 + "," + height / 2 + ")');
+    const yScale = d3.scaleLinear()
+    .range([height, 0])
+    .domain([0, .5]);
 
-    // Create dummy data
-    const data = this.lista;
+    chart.append('g')
+    .call(d3.axisLeft(yScale));
 
-    // set the color scale
-    const color = d3.scaleOrdinal()
-      .domain(data)
-      .range(d3.schemeSet2);
+    const xScale = d3.scaleBand()
+    .range([0, width])
+    .domain(this.points.map((s) => s.letter))
+    .padding(0.2)
 
-    // Compute the position of each group on the pie:
-    const pie = d3.pie()
-      .value(function (d) { return d; });
-    const data_ready = pie(d3.entries(data));
-    // Now I know that group A goes from 0 degrees to x degrees and so on.
+    chart.append('g')
+    .attr('transform', `translate(0, ${height})`)
+    .call(d3.axisBottom(xScale));
+    chart.selectAll()
+    .data(this.points)
+    .enter()
+    .append('rect')
+    .attr('x', (s) => xScale(s.letter))
+    .attr('y', (s) => yScale(s.frequency))
+    .attr('height', (s) => height - yScale(s.frequency))
+    .attr('width', xScale.bandwidth())
+    .attr('x', (actual, index, array) =>
+    xScale(actual.letter))
 
-    // shape helper to build arcs:
-    const arcGenerator = d3.arc()
-      .innerRadius(0)
-      .outerRadius(radius)
+    chart.append('g')
+    .attr('class', 'grid')
+    .call(d3.axisLeft(yScale)
+        .scale(yScale)
+        .tickSize(-width)
+        .tickFormat(x=>''))
 
-    // Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
-    svg
-      .selectAll('mySlices')
-      .data(data_ready)
-      .enter()
-      .append('path')
-      .attr('d', arcGenerator)
-      .attr('fill', function (d) { return (color(d.data.key)) })
-      .attr('stroke', "black")
-      .style("stroke-width", "2px")
-      .style("opacity", 0.7)
+        svg.append('text')
+        .attr('x', -(height / 2) - margin)
+        .attr('y', margin / 2.4)
+        .attr('transform', 'rotate(-90)')
+        .attr('text-anchor', 'middle')
+        .text('Frecuencia')
+    
+    svg.append('text')
+        .attr('x', width / 2 + margin)
+        .attr('y', 40)
+        .attr('text-anchor', 'middle')
+        .text('Letras')
 
-    // Now add the annotation. Use the centroid method to get the best coordinates
-    svg
-      .selectAll('mySlices')
-      .data(data_ready)
-      .enter()
-      .append('text')
-      .text(function (d) { return d.data.key + " " + d.data.value })
-      .attr("transform", function (d) { return "translate(" + arcGenerator.centroid(d) + ")"; })
-      .style("text-anchor", "middle")
-      .style("font-size", 17)
+       /* svgElement
+    .on('mouseenter', function (actual, i) {
+        d3.select(this).attr('opacity', 0.5)
+    })
+    .on('mouseleave', function (actual, i) {
+        d3.select(this).attr('opacity', 1)
+    })
+
+    .on('mouseenter', function (s, i) {
+      d3.select(this)
+          .transition()
+          .duration(300)
+          .attr('opacity', 0.6)
+          .attr('x', a => xScale(a.letter) - 5)
+          .attr('width', xScale.bandwidth() + 10)
+  
+      chart.append('line')
+          .attr('x1', 0)
+          .attr('y1', y)
+          .attr('x2', width)
+          .attr('y2', y)
+          .attr('stroke', 'red')*/
+        
   }
 
 }
